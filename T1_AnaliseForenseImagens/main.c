@@ -22,11 +22,12 @@ typedef struct
     Pixel *pixels;
 } Img;
 
-// Protótipos
-void load(char *name, Img *pic);
-
 // As 2 imagens
 Img in, out;
+
+// Protótipos
+void load(char *name, Img *pic);
+void draw_line(int width, int height, Pixel img[][width], int x0, int y0, int x1, int y1, Pixel color, int thickness);
 
 int main(int argc, char *argv[])
 {
@@ -49,7 +50,7 @@ int main(int argc, char *argv[])
     out = in;
     out.pixels = malloc(tam * sizeof(Pixel));
     memset(out.pixels, 0, tam * sizeof(Pixel));
-   
+
     // Converte para interpretar como matrizes
     Pixel (*pin)[in.width] = (Pixel(*)[in.height]) in.pixels;
     Pixel (*pout)[in.width] = (Pixel(*)[in.height]) out.pixels;
@@ -69,6 +70,10 @@ int main(int argc, char *argv[])
             pout[i][j].b = 255 - pin[i][j].b;
         }
     }
+
+    // Exemplo: desenha uma linha vermelha de um canto a outro da imagem
+    Pixel red = {255, 0, 0};
+    draw_line(out.width, out.height, pout, 0, 0, out.width-1, out.height-1, red, 5);
 
     // NÃO ALTERAR A PARTIR DAQUI!
 
@@ -94,5 +99,34 @@ void load(char *name, Img *pic)
         printf("[%02X %02X %02X] ", pic->pixels[i].r, pic->pixels[i].g, pic->pixels[i].b);
     }
     printf("\n");
+}
+
+// Algoritmo de Bresenham para desenhar uma linha em uma matriz de pixels
+void draw_line(int width, int height, Pixel img[][width], int x0, int y0, int x1, int y1, Pixel color, int thickness) {
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int err = (dx > dy ? dx : -dy) / 2, e2;
+
+    int half = thickness / 2;
+    while (1) {
+        // Draw a square of size thickness x thickness centered at (x0, y0)
+        for (int i = -half; i <= half; i++) {
+            for (int j = -half; j <= half; j++) {
+                int xi = x0 + i, yj = y0 + j;
+                if (xi >= 0 && xi < width && yj >= 0 && yj < height)
+                    img[yj][xi] = color;
+            }
+        }
+        if (x0 == x1 && y0 == y1) break;
+        e2 = err;
+        if (e2 > -dx) {
+            err -= dy;
+            x0 += sx;
+        }
+        if (e2 < dy)  {
+            err += dx;
+            y0 += sy;
+        }
+    }
 }
 
