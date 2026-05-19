@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h> // Para usar strings
 #include <time.h>
 
@@ -22,6 +23,11 @@ typedef struct
     Pixel *pixels;
 } Img;
 
+typedef struct
+{
+    float x,y,z;
+} Star;
+
 // A imagem
 Img out;
 
@@ -37,6 +43,8 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    Star* stars = malloc(sizeof(Star) * 88000);
+
     out.width = 1024;
     out.height = 768;
 
@@ -44,6 +52,35 @@ int main(int argc, char *argv[])
     printf("Imagem   : %d x %d\n", out.width, out.height);
 
     printf("Processando...\n");
+
+
+    FILE* arq = fopen(argv[1], "r");
+    if(!arq) {
+        printf("Erro abrindo o arquivo!\n");
+        exit(1);
+    }
+
+    char linha[1024];
+    fgets(linha, 1024, arq); // pula cabeçalho
+    int totalPontos = 0;
+    while(fgets(linha, 1024, arq))
+    {
+        float ra, dec, dist;
+        sscanf(linha, "%f %f %f", &ra, &dec, &dist);
+        // printf("%f %f %f\n", ra, dec, dist);
+
+        // Converte para coords cartesianas (x,y,z)
+        float x = dist * cos(dec) * cos(ra);
+        float y = dist * cos(dec) * sin(ra);
+        float z = dist * sin(dec);
+        stars[totalPontos].x = x;
+        stars[totalPontos].y = y;
+        stars[totalPontos].z = z;
+        totalPontos++;
+        printf("%f %f %f\n", x, y, z);
+    }
+
+    fclose(arq);
 
     // Cria imagem de saída e "zera" ela
     int tam = out.width * out.height;
@@ -54,15 +91,22 @@ int main(int argc, char *argv[])
     Pixel (*pout)[out.width] = (Pixel(*)[out.height]) out.pixels;
 
     // Exemplo: desenha uma linha vermelha de um canto a outro da imagem
-    Pixel red = {255, 0, 0};
-    draw_line(out.width, out.height, pout, 0, 0, out.width-1, out.height-1, red, 5);
+    // Pixel red = {255, 0, 0};
+    // draw_line(out.width, out.height, pout, 0, 0, out.width-1, out.height-1, red, 5);
 
     // NÃO ALTERAR A PARTIR DAQUI!
 
+    Pixel white = { 255, 255, 255};
+    for(int i=0; i<10000; i++) {
+        int x = rand()%out.width;
+        int y = rand()%out.height;
+        draw_point(out.width, out.height, pout, x, y, white);
+    }
     // Grava a imagem como JPEG para registro
     stbi_write_jpg("saida.jpg", out.width, out.height, 3, pout, 90);
 
     free(out.pixels);
+    free(stars);
 }
 
 
