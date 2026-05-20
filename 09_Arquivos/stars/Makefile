@@ -31,7 +31,7 @@ else
 endif
 
 # Fontes
-FONTES = main.c
+FONTES = main_completo.c
 OBJ = $(FONTES:.c=.o)
 
 # Target (com extensao se necessario)
