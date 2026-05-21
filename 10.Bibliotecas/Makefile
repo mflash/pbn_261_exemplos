@@ -6,9 +6,9 @@ PROG = desenho
 CC = gcc
 
 # Flags
-CFLAGS = -Iinclude -g -O3 # -Wall -g  # Todas as warnings, infos de debug
+CFLAGS = -Iinclude -g -O3 -fPIC # -Wall -g  # Todas as warnings, infos de debug
 LDFLAGS  =
-LIBS     =
+LIBS     = -L. -lshapes
 
 # Detecta SO and e ajusta extensao se necessario
 ifeq ($(OS),Windows_NT)
@@ -31,8 +31,11 @@ else
 endif
 
 # Fontes
-FONTES = main.c shapes.c
+FONTES = main.c 
 OBJ = $(FONTES:.c=.o)
+
+FONTES2 = shapes.c
+OBJ2 = $(FONTES2:.c=.o) # shapes.o
 
 # Target (com extensao se necessario)
 TARGET = $(PROG)$(EXEEXT)
@@ -41,8 +44,17 @@ TARGET = $(PROG)$(EXEEXT)
 all: $(TARGET)
 	@echo "Build completado para $(OSNAME). Saida: $(TARGET)"
 
-$(TARGET): $(OBJ)
+$(TARGET): $(OBJ) libshapes.a
 	$(CC) $(CFLAGS) $(OBJ) -o $@ $(LDFLAGS) $(LIBS)
+
+libshapes.a: $(OBJ2) # shapes.o
+	ar rcs libshapes.a $(OBJ2)
+
+libshapes2.so: $(OBJ2)
+	gcc -fPIC -shared -o libshapes2.so $(OBJ2) $(LDFLAGS)
+
+desenho-shared: $(OBJ) libshapes2.so
+	gcc $(OBJ) -o desenho-shared -L. -lshapes2 -lm
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -51,7 +63,7 @@ clean:
 ifeq ($(OS),Windows_NT)
 	del /Q $(subst /,\,$(OBJ)) $(TARGET) 2>nul || true
 else
-	rm -f $(OBJ) $(TARGET)
+	rm -f $(OBJ) $(TARGET) $(OBJ2) libshapes.a libshapes2.so desenho-shared
 endif
 
 # Mostra infos do SO detectado
